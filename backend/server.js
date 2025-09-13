@@ -1,3 +1,4 @@
+// backend/server.js
 const express = require("express");
 const cors = require("cors");
 const db = require("./models");
@@ -22,7 +23,8 @@ const professorRoutes = require("./routes/professorRoutes");
 const turmaRoutes = require("./routes/turmaRoutes");
 const matriculaRoutes = require("./routes/matriculaRoutes");
 const pagamentoRoutes = require("./routes/pagamentoRoutes");
-const funcionarioRoutes = require("./routes/funcionarioRoutes"); // ✅ LINHA ADICIONADA
+const funcionarioRoutes = require("./routes/funcionarioRoutes");
+const professorModalidadeRoutes = require("./routes/professorModalidadeRoutes"); // ✅ LINHA ADICIONADA
 
 // Configurando rotas
 app.use("/api/auth", authRoutes);
@@ -38,7 +40,8 @@ app.use("/api/professores", professorRoutes);
 app.use("/api/turmas", turmaRoutes);
 app.use("/api/matriculas", matriculaRoutes);
 app.use("/api/pagamentos", pagamentoRoutes);
-app.use("/api/funcionarios", funcionarioRoutes); // ✅ LINHA ADICIONADA
+app.use("/api/funcionarios", funcionarioRoutes);
+app.use("/api/professor-modalidade", professorModalidadeRoutes); // ✅ LINHA ADICIONADA
 
 async function criarSuperAdmin() {
   try {

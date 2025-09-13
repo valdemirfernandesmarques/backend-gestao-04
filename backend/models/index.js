@@ -25,20 +25,21 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 // ===== Carrega models =====
-db.Escola       = require("./Escola")(sequelize, DataTypes);
-db.User         = require("./User")(sequelize, DataTypes);
-db.Aluno        = require("./Aluno")(sequelize, DataTypes);
-db.Professor    = require("./Professor")(sequelize, DataTypes);
-db.Funcionario  = require("./Funcionario")(sequelize, DataTypes); // ✅ CORRIGIDO: Linha que faltava
-db.Modalidade   = require("./Modalidade")(sequelize, DataTypes);
-db.Turma        = require("./Turma")(sequelize, DataTypes);
-db.Matricula    = require("./Matricula")(sequelize, DataTypes);
-db.Mensalidade  = require("./Mensalidade")(sequelize, DataTypes);
-db.Pagamento    = require("./Pagamento")(sequelize, DataTypes);
-db.Comissao     = require("./Comissao")(sequelize, DataTypes);
-db.Produto      = require("./Produto")(sequelize, DataTypes);
-db.Venda        = require("./Venda")(sequelize, DataTypes);
-db.VendaItem    = require("./VendaItem")(sequelize, DataTypes);
+db.Escola               = require("./Escola")(sequelize, DataTypes);
+db.User                 = require("./User")(sequelize, DataTypes);
+db.Aluno                = require("./Aluno")(sequelize, DataTypes);
+db.Professor            = require("./Professor")(sequelize, DataTypes);
+db.Funcionario          = require("./Funcionario")(sequelize, DataTypes);
+db.Modalidade           = require("./Modalidade")(sequelize, DataTypes);
+db.Turma                = require("./Turma")(sequelize, DataTypes);
+db.Matricula            = require("./Matricula")(sequelize, DataTypes);
+db.Mensalidade          = require("./Mensalidade")(sequelize, DataTypes);
+db.Pagamento            = require("./Pagamento")(sequelize, DataTypes);
+db.Comissao             = require("./Comissao")(sequelize, DataTypes);
+db.Produto              = require("./Produto")(sequelize, DataTypes);
+db.Venda                = require("./Venda")(sequelize, DataTypes);
+db.VendaItem            = require("./VendaItem")(sequelize, DataTypes);
+db.ProfessorModalidade  = require("./ProfessorModalidade")(sequelize, DataTypes); // ✅ LINHA ADICIONADA
 
 // ======================= ASSOCIAÇÕES =======================
 // Roda as associações de cada modelo, se a função 'associate' existir

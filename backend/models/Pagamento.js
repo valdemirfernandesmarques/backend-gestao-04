@@ -1,10 +1,13 @@
 // backend/models/Pagamento.js
 module.exports = (sequelize, DataTypes) => {
   const Pagamento = sequelize.define("Pagamento", {
-    // ✅ CORRIGIDO: mensalidadeId não pode ser nulo
     mensalidadeId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
+    },
+    vendaId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
     },
     escolaId: {
       type: DataTypes.INTEGER,
@@ -20,23 +23,15 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: DataTypes.NOW,
     },
     metodo: {
-      type: DataTypes.STRING, // Ex: 'PIX', 'CARTAO', 'BOLETO'
+      type: DataTypes.STRING,
       allowNull: false,
     },
   });
 
-  // ✅ CORRIGIDO: Adicionada a função de associação
   Pagamento.associate = (models) => {
-    // Um pagamento pertence a uma mensalidade
-    Pagamento.belongsTo(models.Mensalidade, {
-      foreignKey: 'mensalidadeId',
-      as: 'mensalidade'
-    });
-    // Um pagamento pode gerar comissões
-    Pagamento.hasMany(models.Comissao, {
-      foreignKey: 'pagamentoId',
-      as: 'comissoes'
-    });
+    Pagamento.belongsTo(models.Mensalidade, { foreignKey: 'mensalidadeId', as: 'mensalidade' });
+    Pagamento.belongsTo(models.Venda, { foreignKey: 'vendaId', as: 'venda' });
+    Pagamento.hasMany(models.Comissao, { foreignKey: 'pagamentoId', as: 'comissoes' });
   };
 
   return Pagamento;
