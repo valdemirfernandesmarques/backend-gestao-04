@@ -16,6 +16,10 @@ router.post("/", authMiddleware, mensalidadeController.criarMensalidade);
 // GET /api/mensalidades
 router.get("/", authMiddleware, mensalidadeController.listarMensalidades);
 
+// Obter mensalidade por ID
+// GET /api/mensalidades/:id
+router.get("/:id", authMiddleware, mensalidadeController.obterMensalidade);
+
 // Atualizar mensalidade
 // PUT /api/mensalidades/:id
 router.put("/:id", authMiddleware, mensalidadeController.atualizarMensalidade);

@@ -1,13 +1,29 @@
-// backend/models/Comissao.js
 module.exports = (sequelize, DataTypes) => {
-  return sequelize.define("Comissao", {
-    pagamentoId: {
+  const Comissao = sequelize.define("Comissao", {
+    pagamentoId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    professorId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
-    valor: {
-      type: DataTypes.DECIMAL(10, 2),
-      allowNull: false,
-    },
-  });
+    valor: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+  });
+
+  Comissao.associate = (models) => {
+    Comissao.belongsTo(models.Professor, {
+      foreignKey: 'professorId',
+      as: 'professor',
+    });
+    Comissao.belongsTo(models.Pagamento, {
+      foreignKey: 'pagamentoId',
+      as: 'pagamento',
+    });
+  };
+
+  return Comissao;
 };

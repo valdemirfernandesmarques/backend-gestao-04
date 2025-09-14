@@ -24,7 +24,8 @@ const turmaRoutes = require("./routes/turmaRoutes");
 const matriculaRoutes = require("./routes/matriculaRoutes");
 const pagamentoRoutes = require("./routes/pagamentoRoutes");
 const funcionarioRoutes = require("./routes/funcionarioRoutes");
-const professorModalidadeRoutes = require("./routes/professorModalidadeRoutes"); // ✅ LINHA ADICIONADA
+const professorModalidadeRoutes = require("./routes/professorModalidadeRoutes");
+const comissaoRoutes = require("./routes/comissaoRoutes"); // ✅ NOVO: Linha para importar a rota de comissões
 
 // Configurando rotas
 app.use("/api/auth", authRoutes);
@@ -41,36 +42,37 @@ app.use("/api/turmas", turmaRoutes);
 app.use("/api/matriculas", matriculaRoutes);
 app.use("/api/pagamentos", pagamentoRoutes);
 app.use("/api/funcionarios", funcionarioRoutes);
-app.use("/api/professor-modalidade", professorModalidadeRoutes); // ✅ LINHA ADICIONADA
+app.use("/api/professor-modalidade", professorModalidadeRoutes);
+app.use("/api/comissoes", comissaoRoutes); // ✅ NOVO: Linha para carregar a rota de comissões
 
 async function criarSuperAdmin() {
-  try {
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPass = process.env.ADMIN_PASS;
-    const existente = await db.User.findOne({ where: { email: adminEmail } });
-    if (!existente) {
-      const hash = await bcrypt.hash(adminPass, 10);
-      await db.User.create({
-        nome: "Super Admin", email: adminEmail, password: hash,
-        perfil: "SUPER_ADMIN", escolaId: null,
-      });
-      console.log(`✅ Super Admin criado: ${adminEmail}`);
-    } else {
-      console.log(`ℹ️ Super Admin já existe: ${adminEmail}`);
-    }
-  } catch (error) {
-    console.error("❌ Erro ao criar Super Admin:", error);
-  }
+  try {
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPass = process.env.ADMIN_PASS;
+    const existente = await db.User.findOne({ where: { email: adminEmail } });
+    if (!existente) {
+      const hash = await bcrypt.hash(adminPass, 10);
+      await db.User.create({
+        nome: "Super Admin", email: adminEmail, password: hash,
+        perfil: "SUPER_ADMIN", escolaId: null,
+      });
+      console.log(`✅ Super Admin criado: ${adminEmail}`);
+    } else {
+      console.log(`ℹ️ Super Admin já existe: ${adminEmail}`);
+    }
+  } catch (error) {
+    console.error("❌ Erro ao criar Super Admin:", error);
+  }
 }
 
 const PORT = process.env.PORT || 3000;
 
 db.sequelize.sync()
-  .then(async () => {
-    console.log("🎯 Banco de dados sincronizado!");
-    await criarSuperAdmin();
-    app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
-  })
-  .catch((err) => {
-    console.error("❌ Erro ao sincronizar banco:", err);
-  });
+  .then(async () => {
+    console.log("🎯 Banco de dados sincronizado!");
+    await criarSuperAdmin();
+    app.listen(PORT, () => console.log(`🚀 Servidor rodando na porta ${PORT}`));
+  })
+  .catch((err) => {
+    console.error("❌ Erro ao sincronizar banco:", err);
+  });

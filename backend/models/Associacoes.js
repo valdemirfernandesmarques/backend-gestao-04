@@ -61,14 +61,20 @@ Mensalidade.belongsTo(Matricula, { as: 'matricula', foreignKey: 'matriculaId' })
 Mensalidade.hasMany(Pagamento, { as: 'pagamentos', foreignKey: 'mensalidadeId' });
 Pagamento.belongsTo(Mensalidade, { as: 'mensalidade', foreignKey: 'mensalidadeId' });
 
+// =========================
+// ✅ NOVO: Adicionando a associação Pagamento ↔ Escola
+// =========================
+Escola.hasMany(Pagamento, { as: 'pagamentos', foreignKey: 'escolaId' });
+Pagamento.belongsTo(Escola, { as: 'escola', foreignKey: 'escolaId' });
+
 module.exports = {
-  Escola,
-  User,
-  Professor,
-  Modalidade,
-  Turma,
-  Aluno,
-  Matricula,
-  Mensalidade,
-  Pagamento
+  Escola,
+  User,
+  Professor,
+  Modalidade,
+  Turma,
+  Aluno,
+  Matricula,
+  Mensalidade,
+  Pagamento
 };
