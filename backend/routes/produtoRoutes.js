@@ -4,12 +4,13 @@ const router = express.Router();
 const controller = require('../controllers/produtoController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// ✅ CORRIGIDO: As rotas agora chamam as funções corretas do novo controller
+const upload = require('../config/multer');
 
-// Criar produto
-router.post('/', authMiddleware, controller.criar);
+// Rota para criar produto com upload de foto
+// ✅ CORRIGIDO: Adicionado o middleware de upload
+router.post('/', authMiddleware, upload.single('foto'), controller.criar);
 
-// Listar todos os produtos
+// Rota para listar todos os produtos
 router.get('/', authMiddleware, controller.listar);
 
 // Obter um produto por ID
@@ -22,5 +23,8 @@ router.put('/:id', authMiddleware, controller.atualizar);
 router.delete('/:id', authMiddleware, controller.remover);
 
 // A rota PATCH para ajustarEstoque foi removida pois a função foi incorporada em atualizar (PUT)
+
+// Rota para upload de imagem
+router.put('/:id/upload-imagem', authMiddleware, upload.single('imagem'), controller.uploadImagem);
 
 module.exports = router;

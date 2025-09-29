@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const { User } = require('../models'); // Certifique-se que User está exportado em models/index.js
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -30,7 +30,7 @@ const authMiddleware = async (req, res, next) => {
         email: user.email,
         perfil: user.perfil,
         escolaId: user.escolaId || null,
-        nome: user.nome,
+        nome: user.nome || '',
         isIsentoTaxa: false,
       };
       return next();
@@ -49,7 +49,7 @@ const authMiddleware = async (req, res, next) => {
         email: user.email,
         perfil: user.perfil,
         escolaId: user.escolaId,
-        nome: user.nome,
+        nome: user.nome || '',
         isIsentoTaxa,
       };
       return next();

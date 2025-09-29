@@ -1,37 +1,42 @@
 // models/IsencaoTaxa.js
-const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database");
-const Escola = require("./Escola");
-
-const IsencaoTaxa = sequelize.define("IsencaoTaxa", {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true
-  },
-  escolaId: {
-    type: DataTypes.INTEGER,
-    allowNull: true, // se null, significa isenção global
-    references: {
-      model: Escola,
-      key: "id"
+module.exports = (sequelize, DataTypes) => {
+  const IsencaoTaxa = sequelize.define("IsencaoTaxa", {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true
+    },
+    escolaId: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'escolas', // Referência corrigida para o nome da tabela
+        key: 'id'
+      }
+    },
+    motivo: {
+      type: DataTypes.STRING(255),
+      allowNull: false
+    },
+    dataInicio: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    dataFim: {
+      type: DataTypes.DATE,
+      allowNull: false
     }
-  },
-  motivo: {
-    type: DataTypes.STRING(255),
-    allowNull: false
-  },
-  dataInicio: {
-    type: DataTypes.DATE,
-    allowNull: false
-  },
-  dataFim: {
-    type: DataTypes.DATE,
-    allowNull: false
-  }
-}, {
-  tableName: "isencoes_taxa",
-  timestamps: true
-});
+  }, {
+    tableName: "isencoes_taxa",
+    timestamps: true
+  });
 
-module.exports = IsencaoTaxa;
+  IsencaoTaxa.associate = (models) => {
+    IsencaoTaxa.belongsTo(models.Escola, {
+      foreignKey: 'escolaId',
+      as: 'escola'
+    });
+  };
+
+  return IsencaoTaxa;
+};

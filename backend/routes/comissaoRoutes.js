@@ -1,13 +1,22 @@
-// backend/routes/comissaoRoutes.js
+// backend/src/routes/comissaoRoutes.js
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/comissaoController');
+const comissaoController = require('../controllers/comissaoController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// Listar todas as comissões
-router.get('/', authMiddleware, controller.listarTodas);
+// Criar comissão
+router.post('/', authMiddleware, comissaoController.criarComissao);
 
-// Listar comissões de um professor
-router.get('/professor/:professorId', authMiddleware, controller.listarPorProfessor);
+// Listar todas as comissões
+router.get('/', authMiddleware, comissaoController.listarTodas);
+
+// Listar comissões de um professor específico
+router.get('/professor/:professorId', authMiddleware, comissaoController.listarPorProfessor);
+
+// Atualizar comissão por ID
+router.put('/:id', authMiddleware, comissaoController.atualizarComissao);
+
+// Remover comissão por ID
+router.delete('/:id', authMiddleware, comissaoController.removerComissao);
 
 module.exports = router;

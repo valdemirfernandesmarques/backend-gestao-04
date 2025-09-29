@@ -1,94 +1,130 @@
-// backend/controllers/modalidadeController.js
 const db = require('../models');
 
-exports.createModalidade = async (req, res) => {
-  try {
-    const { nome, precoAula, descricao, escolaId } = req.body;
+// Criar modalidade
+const criarModalidade = async (req, res) => {
+    try {
+        const { nome, valorMensalidade, precoAula } = req.body;
 
-    if (!nome || precoAula === undefined || !escolaId) {
-      return res.status(400).json({
-        error: 'Campos obrigatórios: nome, precoAula e escolaId'
-      });
+        // Validação dos campos obrigatórios
+        if (!nome || !valorMensalidade || precoAula === undefined || precoAula === null) {
+            return res.status(400).json({
+                error: 'Todos os campos (nome, valorMensalidade, precoAula) são obrigatórios.'
+            });
+        }
+
+        // Criação da modalidade
+        const modalidade = await db.Modalidade.create({
+            nome,
+            valorMensalidade,
+            precoAula
+        });
+
+        res.status(201).json({
+            message: 'Modalidade criada com sucesso!',
+            modalidade
+        });
+    } catch (error) {
+        console.error('Erro ao criar modalidade:', error);
+        if (error.name === 'SequelizeValidationError') {
+            return res.status(400).json({
+                error: 'Erro de validação ao criar modalidade',
+                details: error.errors.map(e => e.message)
+            });
+        }
+
+        res.status(500).json({
+            error: 'Erro ao criar modalidade',
+            details: error.message
+        });
     }
-
-    const modalidade = await db.Modalidade.create({ nome, precoAula, descricao, escolaId });
-    res.status(201).json({ message: 'Modalidade criada com sucesso', modalidade });
-  } catch (error) {
-    // ✅ MUDANÇA PRINCIPAL: LÓGICA PARA DETALHAR O ERRO DE VALIDAÇÃO
-    if (error.name === 'SequelizeValidationError') {
-      const messages = error.errors.map(err => err.message);
-      return res.status(400).json({
-        error: 'Erro de validação',
-        details: messages
-      });
-    }
-
-    // Para outros tipos de erro
-    console.error("Erro detalhado no servidor:", error); // Isso vai logar o erro completo no terminal
-    res.status(500).json({ error: 'Erro ao criar modalidade', details: error.message });
-  }
 };
-
-// ... (o restante do arquivo continua igual, mas para garantir, aqui está ele completo)
 
 // Listar todas as modalidades
-exports.getModalidades = async (req, res) => {
-  try {
-    let whereClause = {};
-    if (req.user.perfil === 'ADMIN_ESCOLA') {
-      whereClause = { escolaId: req.user.escolaId };
+const listarModalidades = async (req, res) => {
+    try {
+        const modalidades = await db.Modalidade.findAll();
+        res.json(modalidades);
+    } catch (error) {
+        console.error('Erro ao listar modalidades:', error);
+        res.status(500).json({
+            error: 'Erro ao listar modalidades',
+            details: error.message
+        });
     }
-    const modalidades = await db.Modalidade.findAll({ where: whereClause });
-    res.json(modalidades);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar modalidades', details: error.message });
-  }
 };
 
-// Buscar modalidade por ID
-exports.getModalidadeById = async (req, res) => {
-  try {
-    const modalidade = await db.Modalidade.findByPk(req.params.id);
-    if (!modalidade) return res.status(404).json({ error: 'Modalidade não encontrada' });
-
-    if (req.user.perfil === 'ADMIN_ESCOLA' && modalidade.escolaId !== req.user.escolaId) {
-      return res.status(403).json({ error: 'Acesso negado a esta modalidade' });
+// Obter modalidade por ID
+const obterModalidade = async (req, res) => {
+    try {
+        const modalidade = await db.Modalidade.findByPk(req.params.id);
+        if (!modalidade) {
+            return res.status(404).json({ error: 'Modalidade não encontrada.' });
+        }
+        res.json(modalidade);
+    } catch (error) {
+        console.error('Erro ao obter modalidade:', error);
+        res.status(500).json({ error: 'Erro ao obter modalidade', details: error.message });
     }
-    res.json(modalidade);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar modalidade', details: error.message });
-  }
 };
 
 // Atualizar modalidade
-exports.updateModalidade = async (req, res) => {
-  try {
-    const modalidade = await db.Modalidade.findByPk(req.params.id);
-    if (!modalidade) return res.status(404).json({ error: 'Modalidade não encontrada' });
+const atualizarModalidade = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nome, valorMensalidade, precoAula } = req.body;
 
-    if (req.user.perfil === 'ADMIN_ESCOLA' && modalidade.escolaId !== req.user.escolaId) {
-      return res.status(403).json({ error: 'Acesso negado a esta modalidade' });
+        const modalidade = await db.Modalidade.findByPk(id);
+        if (!modalidade) {
+            return res.status(404).json({ error: 'Modalidade não encontrada.' });
+        }
+
+        await modalidade.update({ nome, valorMensalidade, precoAula });
+
+        res.json({
+            message: 'Modalidade atualizada com sucesso!',
+            modalidade
+        });
+    } catch (error) {
+        console.error('Erro ao atualizar modalidade:', error);
+        if (error.name === 'SequelizeValidationError') {
+            return res.status(400).json({
+                error: 'Erro de validação ao atualizar modalidade',
+                details: error.errors.map(e => e.message)
+            });
+        }
+        res.status(500).json({
+            error: 'Erro ao atualizar modalidade',
+            details: error.message
+        });
     }
-    const { nome, precoAula, descricao } = req.body;
-    await modalidade.update({ nome, precoAula, descricao });
-    res.json({ message: 'Modalidade atualizada com sucesso', modalidade });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao atualizar modalidade', details: error.message });
-  }
 };
 
-// Deletar modalidade
-exports.deleteModalidade = async (req, res) => {
-  try {
-    const modalidade = await db.Modalidade.findByPk(req.params.id);
-    if (!modalidade) return res.status(404).json({ error: 'Modalidade não encontrada' });
+// Remover modalidade
+const removerModalidade = async (req, res) => {
+    try {
+        const { id } = req.params;
 
-    if (req.user.perfil === 'ADMIN_ESCOLA' && modalidade.escolaId !== req.user.escolaId) {
-      return res.status(403).json({ error: 'Acesso negado a esta modalidade' });
+        const modalidade = await db.Modalidade.findByPk(id);
+        if (!modalidade) {
+            return res.status(404).json({ error: 'Modalidade não encontrada.' });
+        }
+
+        await modalidade.destroy();
+
+        res.json({ message: 'Modalidade removida com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao remover modalidade:', error);
+        res.status(500).json({
+            error: 'Erro ao remover modalidade',
+            details: error.message
+        });
     }
-    await modalidade.destroy();
-    res.json({ message: 'Modalidade deletada com sucesso' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao deletar modalidade', details: error.message });
-  }
+};
+
+module.exports = {
+    criarModalidade,
+    listarModalidades,
+    obterModalidade,
+    atualizarModalidade,
+    removerModalidade
 };

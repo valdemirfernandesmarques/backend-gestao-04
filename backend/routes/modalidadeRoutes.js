@@ -1,13 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/authMiddleware'); // Corrigido import
-const modalidadeController = require('../controllers/modalidadeController');
+const controller = require('../controllers/modalidadeController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-// Todas as rotas exigem login e validação de perfil dentro do controller
-router.post('/', authMiddleware, modalidadeController.createModalidade);
-router.get('/', authMiddleware, modalidadeController.getModalidades);
-router.get('/:id', authMiddleware, modalidadeController.getModalidadeById);
-router.put('/:id', authMiddleware, modalidadeController.updateModalidade);
-router.delete('/:id', authMiddleware, modalidadeController.deleteModalidade);
+// Criar modalidade
+router.post('/', authMiddleware, controller.criarModalidade);
+
+// Listar todas as modalidades
+router.get('/', authMiddleware, controller.listarModalidades);
+
+// Obter modalidade por ID
+router.get('/:id', authMiddleware, controller.obterModalidade);
+
+// Atualizar modalidade
+router.put('/:id', authMiddleware, controller.atualizarModalidade);
+
+// Deletar modalidade (nome correto da função)
+router.delete('/:id', authMiddleware, controller.removerModalidade);
 
 module.exports = router;

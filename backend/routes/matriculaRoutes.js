@@ -1,19 +1,21 @@
-// backend/routes/matriculaRoutes.js
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const matriculaController = require("../controllers/matriculaController");
-const authMiddleware = require("../middleware/authMiddleware");
+const controller = require('../controllers/matriculaController');
+const authMiddleware = require('../middleware/authMiddleware');
 
 // Criar matrícula
-router.post("/", authMiddleware, matriculaController.criarMatricula);
+router.post('/', authMiddleware, controller.criarMatricula);
 
-// Listar matrículas
-router.get("/", authMiddleware, matriculaController.listarMatriculas);
+// Listar todas as matrículas
+router.get('/', authMiddleware, controller.listarMatriculas);
+
+// ✅ NOVO: Rota para obter matrícula por ID
+router.get('/:id', authMiddleware, controller.obterMatricula);
 
 // Atualizar matrícula
-router.put("/:id", authMiddleware, matriculaController.atualizarMatricula);
+router.put('/:id', authMiddleware, controller.atualizarMatricula);
 
 // Deletar matrícula
-router.delete("/:id", authMiddleware, matriculaController.deletarMatricula);
+router.delete('/:id', authMiddleware, controller.deletarMatricula);
 
 module.exports = router;

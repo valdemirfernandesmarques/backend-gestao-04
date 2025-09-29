@@ -1,125 +1,143 @@
+// backend/controllers/relatorioController.js
 const db = require('../models');
-const PDFDocument = require('pdfkit'); // ✅ NOVA: Importa a biblioteca de PDF
+const { Op } = require('sequelize');
+const PDFDocument = require('pdfkit');
 
-// ... (as funções relatorioFinanceiroEscola e relatorioFinanceiroGeral continuam iguais)
-exports.relatorioFinanceiroEscola = async (req, res) => {
+// Relatório de Vendas por Período
+exports.getVendasPorPeriodo = async (req, res) => {
   try {
-    const escolaId = req.user.perfil === 'SUPER_ADMIN'
-      ? req.query.escolaId
-      : req.user?.escolaId;
-    if (!escolaId) {
-      return res.status(400).json({ error: 'escolaId é obrigatório (na query ou pelo usuário autenticado)' });
+    const { dataInicial, dataFinal, escolaId } = req.query;
+
+    if (!dataInicial || !dataFinal) {
+      return res.status(400).json({ error: 'As datas inicial e final são obrigatórias.' });
     }
-    const totalVendas = await db.Venda.sum('totalLiquido', { where: { escolaId } });
-    const totalPagamentos = await db.Pagamento.sum('valor', { where: { escolaId } });
-    res.json({
-      escolaId,
-      totalVendas: totalVendas || 0,
-      totalPagamentos: totalPagamentos || 0,
-      receitaTotal: (totalVendas || 0) + (totalPagamentos || 0),
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao gerar relatório financeiro da escola', details: error.message });
-  }
-};
-exports.relatorioFinanceiroGeral = async (req, res) => {
-  try {
+
     const vendas = await db.Venda.findAll({
-      attributes: ['escolaId', [db.sequelize.fn('SUM', db.sequelize.col('totalLiquido')), 'totalVendas']],
-      group: ['escolaId'],
+      where: {
+        dataVenda: {
+          [Op.between]: [new Date(dataInicial), new Date(dataFinal)],
+        },
+        ...(escolaId && { escolaId })
+      },
+      include: [
+        { model: db.VendaItem, as: 'itens', include: [{ model: db.Produto, as: 'produto' }] },
+        { model: db.Escola, as: 'escola' }
+      ],
+      order: [['dataVenda', 'ASC']]
     });
-    const pagamentos = await db.Pagamento.findAll({
-      attributes: ['escolaId', [db.sequelize.fn('SUM', db.sequelize.col('valor')), 'totalPagamentos']],
-      group: ['escolaId'],
-    });
-    if (req.user.perfil === 'ADMIN_ESCOLA') {
-      const escolaId = req.user.escolaId;
-      const vendasFiltradas = vendas.filter(v => v.escolaId === escolaId);
-      const pagamentosFiltrados = pagamentos.filter(p => p.escolaId === escolaId);
-      return res.json({ vendas: vendasFiltradas, pagamentos: pagamentosFiltrados });
-    }
-    res.json({ vendas, pagamentos });
+
+    res.status(200).json(vendas);
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao gerar relatório financeiro geral', details: error.message });
+    res.status(500).json({ error: 'Erro ao gerar o relatório de vendas por período.', details: error.message });
   }
 };
 
+// Relatório de Vendas por Produto
+exports.getVendasPorProduto = async (req, res) => {
+  try {
+    const { escolaId } = req.query;
 
-// ✅ NOVA FUNÇÃO: Gerar a Nota Fiscal em PDF para um pagamento
-exports.gerarNotaFiscalPDF = async (req, res) => {
-    try {
-        const { pagamentoId } = req.params;
-        const pagamento = await db.Pagamento.findByPk(pagamentoId, {
-            include: [
-                // Inclui todos os dados necessários para a nota
-                { model: db.Escola, as: 'escola' },
-                {
-                    model: db.Mensalidade, as: 'mensalidade',
-                    include: [{
-                        model: db.Matricula, as: 'matricula',
-                        include: [{ model: db.Aluno, as: 'aluno' }]
-                    }]
-                }
-            ]
-        });
+    const vendasPorProduto = await db.VendaItem.findAll({
+      attributes: [
+        'produtoId',
+        [db.sequelize.fn('SUM', db.sequelize.col('VendaItem.quantidade')), 'totalQuantidade'],
+        [db.sequelize.fn('SUM', db.sequelize.col('VendaItem.subtotal')), 'totalVendas']
+      ],
+      group: ['produtoId'],
+      include: [
+        { model: db.Produto, as: 'produto' },
+        { model: db.Venda, as: 'venda', where: { ...(escolaId && { escolaId }) } }
+      ],
+      order: [['totalVendas', 'DESC']]
+    });
 
-        if (!pagamento) {
-            return res.status(404).json({ error: 'Pagamento não encontrado' });
-        }
-        
-        // Validação de segurança
-        if (req.user.perfil === 'ADMIN_ESCOLA' && pagamento.escolaId !== req.user.escolaId) {
-            return res.status(403).json({ error: 'Acesso negado a este pagamento.' });
-        }
+    res.status(200).json(vendasPorProduto);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao gerar o relatório de vendas por produto.', details: error.message });
+  }
+};
 
-        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+// Relatório de Mensalidades
+exports.relatorioMensalidades = async (req, res) => {
+  try {
+    const { escolaId } = req.query;
 
-        // Informações do cabeçalho
-        const escola = pagamento.escola;
-        const aluno = pagamento.mensalidade?.matricula?.aluno;
+    const mensalidades = await db.Mensalidade.findAll({
+      where: { ...(escolaId && { escolaId }) },
+      include: [
+        { model: db.Matricula, as: 'matricula', include: [{ model: db.Aluno, as: 'aluno' }] }
+      ],
+      order: [['dataVencimento', 'ASC']]
+    });
 
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=nota_fiscal_${pagamento.id}.pdf`);
-        doc.pipe(res);
+    res.status(200).json(mensalidades);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao gerar o relatório de mensalidades.', details: error.message });
+  }
+};
 
-        // Cabeçalho da Nota
-        doc.fontSize(20).text(`Nota Fiscal de Serviço`, { align: 'center' });
-        doc.moveDown();
+// Relatório de Pagamentos e Comissões
+exports.relatorioPagamentosComissoes = async (req, res) => {
+  try {
+    const { escolaId } = req.query;
 
-        // Dados da Escola (Prestador)
-        doc.fontSize(12).text(`Prestador: ${escola.nome || 'Nome da Escola não informado'}`, { align: 'left' });
-        doc.text(`CNPJ: ${escola.cnpj || 'CNPJ não informado'}`);
-        doc.moveDown();
+    const pagamentos = await db.Pagamento.findAll({
+      where: { ...(escolaId && { escolaId }) },
+      include: [
+        { model: db.Matricula, as: 'matricula', include: [{ model: db.Aluno, as: 'aluno' }] },
+        { model: db.Comissao, as: 'comissoes', include: [{ model: db.Professor, as: 'professor' }] }
+      ],
+      order: [['dataPagamento', 'ASC']]
+    });
 
-        // Dados do Aluno (Tomador)
-        if (aluno) {
-            doc.text(`Tomador: ${aluno.nome || 'Nome do Aluno não informado'}`);
-            doc.text(`CPF: ${aluno.cpf || 'CPF não informado'}`);
-            doc.moveDown();
-        }
+    res.status(200).json(pagamentos);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao gerar o relatório de pagamentos e comissões.', details: error.message });
+  }
+};
 
-        // Detalhes do Pagamento
-        doc.fontSize(14).text('Detalhes do Pagamento', { underline: true });
-        doc.fontSize(12).text(`ID do Pagamento: ${pagamento.id}`);
-        doc.text(`Data do Pagamento: ${new Date(pagamento.dataPagamento).toLocaleDateString('pt-BR')}`);
-        doc.text(`Método: ${pagamento.metodo}`);
-        doc.moveDown();
+// Função para gerar PDF da nota fiscal
+exports.getNotaFiscalPdf = async (req, res) => {
+  try {
+    const { vendaId } = req.params;
 
-        // Descrição do Serviço
-        doc.fontSize(14).text('Descrição do Serviço', { underline: true });
-        const descricaoServico = pagamento.mensalidade
-            ? `Referente à mensalidade da matrícula #${pagamento.mensalidade.matriculaId}`
-            : 'Referente a uma venda de produto';
-        doc.fontSize(12).text(descricaoServico);
-        doc.moveDown(2);
+    const venda = await db.Venda.findByPk(vendaId, {
+      include: [
+        { model: db.VendaItem, as: 'itens', include: [{ model: db.Produto, as: 'produto' }] },
+        { model: db.Escola, as: 'escola' }
+      ]
+    });
 
-        // Total
-        doc.fontSize(16).text(`Valor Total: R$ ${parseFloat(pagamento.valor).toFixed(2)}`, { align: 'right' });
+    if (!venda) return res.status(404).json({ error: 'Venda não encontrada.' });
 
-        doc.end();
+    const doc = new PDFDocument();
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=nota_fiscal_${vendaId}.pdf`);
+    doc.pipe(res);
 
-    } catch (error) {
-        console.error("Erro ao gerar PDF da nota fiscal:", error);
-        res.status(500).json({ error: 'Erro ao gerar PDF da nota fiscal', details: error.message });
-    }
+    doc.fontSize(25).text('Nota Fiscal', { align: 'center' });
+    doc.moveDown();
+    doc.fontSize(12).text(`Venda ID: ${venda.id}`);
+    doc.text(`Data: ${venda.dataVenda.toLocaleDateString()}`);
+    doc.moveDown();
+    doc.text(`Escola: ${venda.escola.nome}`);
+    doc.moveDown();
+
+    doc.fontSize(16).text('Itens da Venda', { underline: true });
+    doc.moveDown();
+
+    venda.itens.forEach(item => {
+      doc.text(`- Produto: ${item.produto.nome} (Qtd: ${item.quantidade}, Preço: R$ ${item.precoUnitario})`);
+    });
+
+    doc.moveDown();
+    doc.fontSize(16).text(`Total Bruto: R$ ${venda.totalBruto}`);
+    doc.text(`Descontos: R$ ${venda.totalDescontos}`);
+    doc.text(`Total Líquido: R$ ${venda.totalLiquido}`);
+    doc.text(`Método de Pagamento: ${venda.metodoPagamento}`);
+
+    doc.end();
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao gerar o PDF da nota fiscal.', details: error.message });
+  }
 };

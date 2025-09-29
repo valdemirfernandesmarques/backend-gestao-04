@@ -2,13 +2,19 @@
 const express = require('express');
 const router = express.Router();
 const relatorioController = require('../controllers/relatorioController');
-const auth = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 
-// Relatórios financeiros
-router.get('/financeiro/escola', auth, relatorioController.relatorioFinanceiroEscola);
-router.get('/financeiro/geral', auth, relatorioController.relatorioFinanceiroGeral);
+// Relatórios de mensalidades
+router.get('/mensalidades', authMiddleware, relatorioController.relatorioMensalidades);
 
-// ✅ NOVO: Rota para gerar a Nota Fiscal em PDF de um pagamento específico
-router.get('/nota-fiscal/:pagamentoId', auth, relatorioController.gerarNotaFiscalPDF);
+// Relatórios de vendas
+router.get('/vendas-por-periodo', authMiddleware, relatorioController.getVendasPorPeriodo);
+router.get('/vendas-por-produto', authMiddleware, relatorioController.getVendasPorProduto);
+
+// Relatórios de pagamentos e comissões
+router.get('/pagamentos-comissoes', authMiddleware, relatorioController.relatorioPagamentosComissoes);
+
+// Nota fiscal em PDF
+router.get('/nota-fiscal-pdf/:vendaId', authMiddleware, relatorioController.getNotaFiscalPdf);
 
 module.exports = router;

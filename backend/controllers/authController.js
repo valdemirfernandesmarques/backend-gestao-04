@@ -1,60 +1,56 @@
 // backend/controllers/authController.js
-const { User } = require('../models');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { User } = require("../models");
 
+// ================================
+// Controller de Autenticação
+// ================================
+
+// Login do usuário
 exports.login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
+  // 🔹 Debug: mostrar o que chega no corpo da requisição
+  console.log("REQ.BODY:", req.body);
 
-    // Validação básica
+  try {
+    const { email, password } = req.body; // ✅ NOVO: 'senha' foi trocado por 'password'
+
+    // Verifica se os campos foram enviados
     if (!email || !password) {
-      return res.status(400).json({ error: 'Email e senha são obrigatórios' });
+      return res.status(400).json({ error: "E-mail e senha são obrigatórios" });
     }
 
-    // Procura o usuário pelo email
+    // Procura usuário no banco
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.status(401).json({ error: 'Usuário não encontrado' });
+      return res.status(401).json({ error: "Usuário não encontrado" });
     }
 
-    // Compara a senha fornecida com a senha hash do banco
+    // Valida senha com bcrypt
     const senhaValida = await bcrypt.compare(password, user.password);
     if (!senhaValida) {
-      return res.status(401).json({ error: 'Senha incorreta' });
+      return res.status(401).json({ error: "Senha inválida" });
     }
 
-    // Flag para verificar isenção de taxa (caso queira usar em pagamentos)
-    const isIsentoTaxa = user.email === 'admin@escolateste.com';
-
-    // Gera o token JWT
+    // Gera token JWT
     const token = jwt.sign(
       {
         id: user.id,
         email: user.email,
-        perfil: user.perfil, // ✅ NOVO: Garante que o perfil do banco de dados seja usado
-        escolaId: user.escolaId,
-        isIsentoTaxa,
+        perfil: user.perfil,
+        escolaId: user.escolaId
       },
-      process.env.JWT_SECRET || 'segredo123',
-      { expiresIn: '7d' }
+      process.env.JWT_SECRET || "segredo123", // ⚠️ Certifique-se de ter JWT_SECRET no .env
+      { expiresIn: "8h" }
     );
 
-    // Retorna dados do usuário e token
+    // Retorna resposta com token
     res.json({
-      message: 'Login realizado com sucesso',
-      token,
-      user: {
-        id: user.id,
-        email: user.email,
-        perfil: user.perfil,
-        escolaId: user.escolaId,
-        nome: user.nome,
-        isIsentoTaxa,
-      }
+      message: "Login realizado com sucesso",
+      token
     });
-  } catch (err) {
-    console.error('Erro no login:', err);
-    res.status(500).json({ error: 'Erro interno no login' });
+  } catch (error) {
+    console.error("❌ Erro no login:", error);
+    res.status(500).json({ error: "Erro interno no servidor" });
   }
 };

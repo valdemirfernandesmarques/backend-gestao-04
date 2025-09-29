@@ -13,7 +13,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
     },
-    // Chaves estrangeiras são definidas nas associações
     vendaId: {
       type: DataTypes.INTEGER,
       allowNull: false,
@@ -24,17 +23,17 @@ module.exports = (sequelize, DataTypes) => {
     },
   });
 
-  // ✅ CORRIGIDO: Adicionada a função de associação
   VendaItem.associate = (models) => {
     // Um item de venda pertence a uma venda
     VendaItem.belongsTo(models.Venda, {
-      foreignKey: 'vendaId',
-      as: 'venda'
+      foreignKey: "vendaId",
+      as: "venda",
     });
+
     // Um item de venda pertence a um produto
     VendaItem.belongsTo(models.Produto, {
-      foreignKey: 'produtoId',
-      as: 'produto'
+      foreignKey: "produtoId",
+      as: "produto",
     });
   };
 

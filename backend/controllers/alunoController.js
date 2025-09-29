@@ -1,96 +1,53 @@
-const { Aluno } = require('../models');
+// backend/controllers/authController.js
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { User } = require("../models");
 
-// Criar um novo aluno
-exports.createAluno = async (req, res) => {
+// ================================
+// Controller de Autenticação
+// ================================
+
+// Login do usuário
+exports.login = async (req, res) => {
   try {
-    const { nome, cpf, email, telefone, escolaId: escolaIdBody } = req.body;
+    const { email, senha } = req.body;
 
-    if (!nome || !cpf || !email) {
-      return res.status(400).json({
-        error: 'Campos obrigatórios: nome, cpf e email'
-      });
+    // Verifica se os campos foram enviados
+    if (!email || !senha) {
+      return res.status(400).json({ error: "E-mail e senha são obrigatórios" });
     }
 
-    // SUPER_ADMIN pode criar aluno em qualquer escola (passada no body)
-    const escolaId = req.user.perfil === 'SUPER_ADMIN' ? escolaIdBody || null : req.user.escolaId;
-
-    if (!escolaId) {
-      return res.status(403).json({ error: 'Usuário não pertence a nenhuma escola' });
+    // Procura usuário no banco
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(401).json({ error: "Usuário não encontrado" });
     }
 
-    // ADMIN_ESCOLA não pode criar alunos em outra escola
-    if (req.user.perfil === 'ADMIN_ESCOLA' && escolaId !== req.user.escolaId) {
-      return res.status(403).json({ error: 'Acesso negado: você não pode criar aluno em outra escola' });
+    // Valida senha com bcrypt
+    const senhaValida = await bcrypt.compare(senha, user.password);
+    if (!senhaValida) {
+      return res.status(401).json({ error: "Senha inválida" });
     }
 
-    const aluno = await Aluno.create({ nome, cpf, email, telefone, escolaId });
+    // Gera token JWT
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        perfil: user.perfil,
+        escolaId: user.escolaId
+      },
+      process.env.JWT_SECRET || "segredo123", // ⚠️ Certifique-se de ter JWT_SECRET no .env
+      { expiresIn: "8h" }
+    );
 
-    res.status(201).json({ message: 'Aluno criado com sucesso', aluno });
+    // Retorna resposta com token
+    res.json({
+      message: "Login realizado com sucesso",
+      token
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Erro ao criar aluno', details: error.message });
-  }
-};
-
-// Listar todos os alunos
-exports.getAlunos = async (req, res) => {
-  try {
-    const whereClause = req.user.perfil === 'ADMIN_ESCOLA' ? { escolaId: req.user.escolaId } : {};
-    const alunos = await Aluno.findAll({ where: whereClause });
-    res.json(alunos);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar alunos', details: error.message });
-  }
-};
-
-// Buscar aluno por ID
-exports.getAlunoById = async (req, res) => {
-  try {
-    const aluno = await Aluno.findByPk(req.params.id);
-    if (!aluno) return res.status(404).json({ error: 'Aluno não encontrado' });
-
-    // ADMIN_ESCOLA só pode acessar alunos de sua própria escola
-    if (req.user.perfil === 'ADMIN_ESCOLA' && aluno.escolaId !== req.user.escolaId) {
-      return res.status(403).json({ error: 'Acesso negado a este aluno' });
-    }
-
-    // SUPER_ADMIN pode acessar qualquer aluno
-    res.json(aluno);
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao buscar aluno', details: error.message });
-  }
-};
-
-// Atualizar aluno
-exports.updateAluno = async (req, res) => {
-  try {
-    const aluno = await Aluno.findByPk(req.params.id);
-    if (!aluno) return res.status(404).json({ error: 'Aluno não encontrado' });
-
-    if (req.user.perfil === 'ADMIN_ESCOLA' && aluno.escolaId !== req.user.escolaId) {
-      return res.status(403).json({ error: 'Acesso negado a este aluno' });
-    }
-
-    const { nome, cpf, email, telefone } = req.body;
-    await aluno.update({ nome, cpf, email, telefone });
-    res.json({ message: 'Aluno atualizado com sucesso', aluno });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao atualizar aluno', details: error.message });
-  }
-};
-
-// Deletar aluno
-exports.deleteAluno = async (req, res) => {
-  try {
-    const aluno = await Aluno.findByPk(req.params.id);
-    if (!aluno) return res.status(404).json({ error: 'Aluno não encontrado' });
-
-    if (req.user.perfil === 'ADMIN_ESCOLA' && aluno.escolaId !== req.user.escolaId) {
-      return res.status(403).json({ error: 'Acesso negado a este aluno' });
-    }
-
-    await aluno.destroy();
-    res.json({ message: 'Aluno deletado com sucesso' });
-  } catch (error) {
-    res.status(500).json({ error: 'Erro ao deletar aluno', details: error.message });
+    console.error("❌ Erro no login:", error);
+    res.status(500).json({ error: "Erro interno no servidor" });
   }
 };

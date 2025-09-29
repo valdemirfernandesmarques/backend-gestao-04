@@ -1,32 +1,26 @@
-// backend/models/ProfessorModalidade.js
 module.exports = (sequelize, DataTypes) => {
-  const ProfessorModalidade = sequelize.define('ProfessorModalidade', {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true,
-      allowNull: false
-    },
-    professorId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'Professores', // Nome da tabela
-        key: 'id'
-      }
-    },
-    modalidadeId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'Modalidades', // Nome da tabela
-        key: 'id'
-      }
-    }
-  }, {
-    tableName: 'professores_modalidades',
-    timestamps: false // Tabelas de junção geralmente não precisam de timestamps
-  });
+    const ProfessorModalidade = sequelize.define('ProfessorModalidade', {
+        // Campos que você possa ter na tabela de junção
+        // Por exemplo, uma data de associação, status, etc.
+    }, {
+        tableName: 'professores_modalidades', // Nome da sua tabela de junção, se for diferente
+        timestamps: true // Adiciona createdAt e updatedAt
+    });
 
-  return ProfessorModalidade;
+    ProfessorModalidade.associate = (models) => {
+        // Define as associações many-to-many
+        // Professor-Modalidade pertence a Professor
+        ProfessorModalidade.belongsTo(models.Professor, {
+            foreignKey: 'professorId',
+            as: 'professor'
+        });
+
+        // Professor-Modalidade pertence a Modalidade
+        ProfessorModalidade.belongsTo(models.Modalidade, {
+            foreignKey: 'modalidadeId',
+            as: 'modalidade'
+        });
+    };
+
+    return ProfessorModalidade;
 };

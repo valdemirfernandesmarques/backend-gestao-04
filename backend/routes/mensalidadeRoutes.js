@@ -10,7 +10,7 @@ const authMiddleware = require("../middleware/authMiddleware");
 
 // Criar mensalidade
 // POST /api/mensalidades
-router.post("/", authMiddleware, mensalidadeController.criarMensalidade);
+router.post("/", authMiddleware, mensalidadeController.cadastrarMensalidade);
 
 // Listar mensalidades
 // GET /api/mensalidades

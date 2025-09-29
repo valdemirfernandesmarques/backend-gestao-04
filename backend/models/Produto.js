@@ -18,9 +18,15 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: false,
     },
+    imageUrl: { // ✅ Campo da imagem
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+  }, {
+    tableName: "produtos", // ⚠️ Garantir que bate com a tabela real
+    timestamps: true
   });
 
-  // ✅ CORRIGIDO: Adicionada a função de associação
   Produto.associate = (models) => {
     // Um produto pertence a uma escola
     Produto.belongsTo(models.Escola, {
@@ -36,3 +42,4 @@ module.exports = (sequelize, DataTypes) => {
 
   return Produto;
 };
+
